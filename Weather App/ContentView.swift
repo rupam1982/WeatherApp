@@ -22,16 +22,28 @@ struct ContentView: View {
                 
                 
                 VStack (spacing: 9) {
-                    Image(systemName: "cloud.sun.fill")
-                        . renderingMode(.original)
-                        . resizable()
-                        . aspectRatio(contentMode: .fit)
-                        . frame(width: 180, height: 180)
+                    if #available(iOS 18.0, *) {
+                        Image(systemName: "thermometer.sun.fill")
+                            .resizable()
+                            .symbolRenderingMode(.multicolor)
+                            .symbolEffect(.breathe)
+                            .foregroundColor(.yellow)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 100, height: 180)
+                    } else {
+                        Image(systemName: "thermometer.sun.fill")
+                            .resizable()
+                            .symbolRenderingMode(.multicolor)
+                            .foregroundColor(.yellow)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 100, height: 180)
+                    }
+                    
                     Text("76")
                         .font(.system(size: 70, weight: .medium))
                         .foregroundColor(.white)
                 }
-                
+                Spacer().frame(height: 15)
                 
                 HStack(spacing: 20) {
                     VStack {
