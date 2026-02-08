@@ -10,6 +10,9 @@ import SwiftUI
 struct ContentView: View {
     
     @State private var isNight = false
+    @State private var text = ""
+    let options = ["Apple", "Banana", "Cherry"]
+    
     
     var body: some View {
         ZStack {
@@ -44,6 +47,8 @@ struct ContentView: View {
                         .foregroundColor(.white)
                 }
                 Spacer().frame(height: 15)
+                
+                TextBoxWithMenu(text: $text, options: options)
                 
                 HStack(spacing: 20) {
                     VStack {
@@ -144,6 +149,31 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+    }
+}
+
+struct TextBoxWithMenu: View {
+    @Binding var text: String
+    var options: [String]
+
+    var body: some View {
+        HStack {
+            TextField("Type or choose…", text: $text)
+
+            Menu {
+                ForEach(options, id: \.self) { item in
+                    Button(item) {
+                        text = item
+                    }
+                }
+            } label: {
+                Image(systemName: "chevron.down")
+                    .padding(.horizontal, 6)
+            }
+        }
+        .padding()
+        .background(.gray.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
