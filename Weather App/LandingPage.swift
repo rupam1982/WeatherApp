@@ -31,7 +31,7 @@ struct LandingPage: View {
                             ActionIcon(actionName: "Property", imageName: "house.fill")
                         }
                         Button(action: {
-                            print("Utilities button tapped")
+                            // Utilities action placeholder
                         }) {
                             ActionIcon(actionName: "Utilities", imageName: "airplane.departure")
                         }
@@ -39,13 +39,11 @@ struct LandingPage: View {
                     
                     HStack(spacing: 20) {
                         Button(action: {
-                            print("Treasury button tapped")
+                            // Treasury action placeholder
                         }) {
                             ActionIcon(actionName: "Treasury", imageName: "dollarsign.bank.building")
                         }
-                        Button(action: {
-                            print("Database button tapped")
-                        }) {
+                        NavigationLink(destination: DatabasePage()) {
                             ActionIcon(actionName: "Database", imageName: "character.book.closed")
                         }
                     }
@@ -99,13 +97,11 @@ struct ActionIcon: View {
 func copyJSONFileToDocumentsDirectory(filename: String, fileExtension: String) {
     let fileManager = FileManager.default
     guard let bundleURL = Bundle.main.url(forResource: filename, withExtension: fileExtension) else {
-        print("Source file not found in bundle")
         return
     }
 
     // Get the destination URL in the Documents directory
     guard let documentsDirectoryURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-        print("Documents directory not found")
         return
     }
     let destinationURL = documentsDirectoryURL.appendingPathComponent("\(filename).\(fileExtension)")
@@ -114,12 +110,9 @@ func copyJSONFileToDocumentsDirectory(filename: String, fileExtension: String) {
     if !fileManager.fileExists(atPath: destinationURL.path) {
         do {
             try fileManager.copyItem(at: bundleURL, to: destinationURL)
-            print("File copied to Documents directory")
         } catch {
-            print("Error copying file: \(error.localizedDescription)")
+            // Silently handle error
         }
-    } else {
-        print("File already exists in Documents directory")
     }
 }
 

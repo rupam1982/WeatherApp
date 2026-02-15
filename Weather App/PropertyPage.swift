@@ -25,6 +25,8 @@ struct PropertyPage: View {
     @FocusState private var isLocalityFieldFocused: Bool
     @FocusState private var isPropertyFieldFocused: Bool
     
+    var topRightIconName: String = "house.fill"
+    
     private var isPlayerSelected: Bool {
         !new_player_text.isEmpty && new_player_text != "New player"
     }
@@ -46,7 +48,9 @@ struct PropertyPage: View {
                     isLocalityFieldFocused = false
                     isPropertyFieldFocused = false
                 }
+            
             VStack {
+                VStack {
                 Spacer()
                     .onTapGesture {
                         isPlayerFieldFocused = false
@@ -100,7 +104,28 @@ struct PropertyPage: View {
                 .opacity(isPropertySelected ? 1.0 : 0.5)
                 Spacer()
             }
-        
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HStack(spacing: 10) {
+                    NavigationLink(destination: TransactionsDatabase()) {
+                        Image(systemName: "dollarsign")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
+                    NavigationLink(destination: DatabasePage()) {
+                        Image(systemName: "books.vertical")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
+                    NavigationLink(destination: LandingPage()) {
+                        Image(systemName: topRightIconName)
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
         }
         .onAppear {
             if let data: PropertyDatabase = readJsonDatabase(filename: "Asset_database.json") {

@@ -1,5 +1,5 @@
 //
-//  TransactionsDatabase.swift
+//  DatabasePage.swift
 //  Weather App
 //
 //  Created by Rupam Mukherjee on 15/02/26.
@@ -8,16 +8,17 @@
 import SwiftUI
 import Foundation
 
-struct TransactionsDatabase: View {
+struct DatabasePage: View {
     
-    @State private var accountsDatabase: AccountsDatabase?
+    @State private var playerDatabase: PlayerDatabase?
     @State private var tableData: [TableRow] = []
     
     struct TableRow: Identifiable {
         let id = UUID()
         let player: String
-        let amount: Double
-        let party: String
+        let locality: String
+        let property: String
+        let houses: Int
     }
     
     var body: some View {
@@ -26,7 +27,7 @@ struct TransactionsDatabase: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 20) {
-                Text("Transactions Database")
+                Text("Property Database")
                     .font(.system(size: 32, weight: .bold))
                     .foregroundColor(.white)
                     .padding(.top, 20)
@@ -46,7 +47,7 @@ struct TransactionsDatabase: View {
                                 .fill(Color.black)
                                 .frame(width: 1)
                             
-                            Text("Amount")
+                            Text("Locality")
                                 .padding()
                                 .frame(width: 250, alignment: .leading)
                                 .background(Color.blue)
@@ -57,9 +58,20 @@ struct TransactionsDatabase: View {
                                 .fill(Color.black)
                                 .frame(width: 1)
                             
-                            Text("Party")
+                            Text("Property")
                                 .padding()
                                 .frame(width: 250, alignment: .leading)
+                                .background(Color.blue)
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.black)
+                            
+                            Rectangle()
+                                .fill(Color.black)
+                                .frame(width: 1)
+                            
+                            Text("No of Houses")
+                                .padding()
+                                .frame(width: 230, alignment: .leading)
                                 .background(Color.blue)
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.black)
@@ -84,7 +96,7 @@ struct TransactionsDatabase: View {
                                     .fill(Color.black)
                                     .frame(width: 1)
                                 
-                                Text(String(format: "%.2f", row.amount))
+                                Text(row.locality)
                                     .padding()
                                     .frame(width: 250, alignment: .leading)
                                     .lineLimit(1)
@@ -96,9 +108,21 @@ struct TransactionsDatabase: View {
                                     .fill(Color.black)
                                     .frame(width: 1)
                                 
-                                Text(row.party)
+                                Text(row.property)
                                     .padding()
                                     .frame(width: 250, alignment: .leading)
+                                    .lineLimit(1)
+                                    .background(Color.white.opacity(0.8))
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.black)
+                                
+                                Rectangle()
+                                    .fill(Color.black)
+                                    .frame(width: 1)
+                                
+                                Text("\(row.houses)")
+                                    .padding()
+                                    .frame(width: 230, alignment: .leading)
                                     .lineLimit(1)
                                     .background(Color.white.opacity(0.8))
                                     .font(.system(size: 24))
@@ -125,22 +149,21 @@ struct TransactionsDatabase: View {
             }
         }
         .onAppear {
-            loadAccountsData()
+            loadPlayerData()
         }
     }
     
-    private func loadAccountsData() {
-        if let data: AccountsDatabase = readJsonDatabase(filename: "Player_accounts.json") {
-            accountsDatabase = data
+    private func loadPlayerData() {
+        if let data: PlayerDatabase = readJsonDatabase(filename: "Player_database.json") {
+            playerDatabase = data
             
             var rows: [TableRow] = []
-            for (player, transactions) in data.accounts.sorted(by: { $0.key < $1.key }) {
-                for transaction in transactions {
-                    rows.append(TableRow(
-                        player: player,
-                        amount: transaction.paymentAmount,
-                        party: transaction.paymentSource
-                    ))
+            for (player, localities) in data.players.sorted(by: { $0.key < $1.key }) {
+                for (locality, properties) in localities.sorted(by: { $0.key < $1.key }) {
+                    for (property, propertyInfo) in properties.sorted(by: { $0.key < $1.key }) {
+                        let houses = propertyInfo.houses ?? 0
+                        rows.append(TableRow(player: player, locality: locality, property: property, houses: houses))
+                    }
                 }
             }
             tableData = rows
@@ -148,31 +171,8 @@ struct TransactionsDatabase: View {
     }
 }
 
-struct TransactionInfo: Codable {
-    let paymentAmount: Double
-    let paymentSource: String
-    
-    enum CodingKeys: String, CodingKey {
-        case paymentAmount = "payment amount"
-        case paymentSource = "payment source"
-    }
-}
-
-struct AccountsDatabase: Codable {
-    let accounts: [String: [TransactionInfo]]
-    
-    enum CodingKeys: String, CodingKey {
-        case accounts = ""
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        accounts = try container.decode([String: [TransactionInfo]].self)
-    }
-}
-
-struct TransactionsDatabase_Previews: PreviewProvider {
+struct DatabasePage_Previews: PreviewProvider {
     static var previews: some View {
-        TransactionsDatabase()
+        DatabasePage()
     }
 }
