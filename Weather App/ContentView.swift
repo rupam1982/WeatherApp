@@ -48,89 +48,15 @@ struct ContentView: View {
                 }
                 Spacer().frame(height: 15)
                 
-                TextBoxWithMenu(text: $text, options: options)
-                
+                TextBoxWithMenu(text: $text, options: options, backgroundColor: Color.white.opacity(1.0))
+                    
                 HStack(spacing: 20) {
-                    VStack {
-                        Text("Mon")
-                            .font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-                        Image(systemName: "cloud.sun.fill")
-                            . renderingMode(.original)
-                            . resizable()
-                            . aspectRatio(contentMode: .fit)
-                            . frame(width: 40, height: 40)
-                        Text("70")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    VStack {
-                        Text("Mon")
-                            .font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-                        Image(systemName: "cloud.sun.fill")
-                            . renderingMode(.original)
-                            . resizable()
-                            . aspectRatio(contentMode: .fit)
-                            . frame(width: 40, height: 40)
-                        Text("70")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    VStack {
-                        Text("Mon")
-                            . font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-                        Image(systemName: "cloud.sun.fill")
-                            . renderingMode(.original)
-                            . resizable()
-                            . aspectRatio(contentMode: .fit)
-                            . frame(width: 40, height: 40)
-                        Text("70")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    VStack {
-                        Text("Mon")
-                            . font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-                        Image(systemName: "cloud.sun.fill")
-                            . renderingMode(.original)
-                            . resizable()
-                            . aspectRatio(contentMode: .fit)
-                            . frame(width: 40, height: 40)
-                        Text("70")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    VStack {
-                        Text("Mon")
-                            . font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-                        Image(systemName: "cloud.sun.fill")
-                            . renderingMode(.original)
-                            . resizable()
-                            . aspectRatio(contentMode: .fit)
-                            . frame(width: 40, height: 40)
-                        Text("70")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    VStack {
-                        Text("Mon")
-                            . font(.system(size: 16, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-                        Image(systemName: "cloud.sun.fill")
-                            . renderingMode(.original)
-                            . resizable()
-                            . aspectRatio(contentMode: .fit)
-                            . frame(width: 40, height: 40)
-                        Text("70")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    
-                    
+                    WeatherDayView(dayOfWeek: "Mon", imageName: "cloud.sun.fill", temperature: 70)
+                    WeatherDayView(dayOfWeek: "Mon", imageName: "cloud.sun.fill", temperature: 70)
+                    WeatherDayView(dayOfWeek: "Mon", imageName: "cloud.sun.fill", temperature: 70)
+                    WeatherDayView(dayOfWeek: "Mon", imageName: "cloud.sun.fill", temperature: 70)
+                    WeatherDayView(dayOfWeek: "Mon", imageName: "cloud.sun.fill", temperature: 70)
+                    WeatherDayView(dayOfWeek: "Mon", imageName: "cloud.sun.fill", temperature: 70)
                 }
                 Spacer()
                 
@@ -155,10 +81,30 @@ struct ContentView_Previews: PreviewProvider {
 struct TextBoxWithMenu: View {
     @Binding var text: String
     var options: [String]
+    var backgroundColor: Color = .white
+    var isDisabled: Bool = false
+    var allowTyping: Bool = false
+    var isFocused: FocusState<Bool>.Binding? = nil
 
     var body: some View {
         HStack {
-            TextField("Type or choose…", text: $text)
+            Group {
+                if let isFocused = isFocused {
+                    TextField("Type or choose…", text: $text)
+                        .foregroundColor(.black)
+                        .disabled(isDisabled)
+                        .focused(isFocused)
+                        .onTapGesture {
+                            if allowTyping && !isDisabled {
+                                isFocused.wrappedValue = true
+                            }
+                        }
+                } else {
+                    TextField("Type or choose…", text: $text)
+                        .foregroundColor(.black)
+                        .disabled(isDisabled || !allowTyping)
+                }
+            }
 
             Menu {
                 ForEach(options, id: \.self) { item in
@@ -169,10 +115,12 @@ struct TextBoxWithMenu: View {
             } label: {
                 Image(systemName: "chevron.down")
                     .padding(.horizontal, 6)
+                    .foregroundColor(.black)
             }
+            .disabled(isDisabled)
         }
         .padding()
-        .background(.gray.opacity(0.1))
+        .background(isDisabled ? backgroundColor.opacity(0.5) : backgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

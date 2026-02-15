@@ -1,0 +1,38 @@
+{
+  "Player 1": {
+    "Boston": {
+      "Beacon Street": {
+        "houses": 4
+      },
+      "Brattle Street": {
+        "houses": 2
+      }
+    },
+    "Utilities": {
+      "U.S. Gas Company": {}
+    },
+    "Los Angeles": {
+      "Hollywood Ave.": {
+        "houses": 0
+      }
+    }
+  },
+  "Player 2": {
+    "Chicago": {
+      "Michigan Avenue": {
+        "houses": 2
+      },
+      "Rush Street": {
+        "houses": 1
+      }
+    },
+    "Transport": {
+      "U.S. Air Line": {}
+    },
+    "New York": {
+      "Fifth Avenue": {
+        "houses": 1
+      }
+    }
+  }
+}

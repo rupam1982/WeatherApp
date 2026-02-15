@@ -1,0 +1,94 @@
+{
+    "Player 1": [
+        {
+            "payment amount": 1500,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -840,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -520,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -150,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": 100.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -120,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": 168,
+            "payment source": "Player 2"
+        },
+        {
+            "payment amount": -25.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -100.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -100.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -200.0,
+            "payment source": "Treasurer"
+        }
+    ],
+    "Player 2": [
+        {
+            "payment amount": 1500,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -360,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -240,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -200,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -75.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -168,
+            "payment source": "Player 1"
+        },
+        {
+            "payment amount": 75.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": 25.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": 75.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": 35.0,
+            "payment source": "Treasurer"
+        },
+        {
+            "payment amount": -550,
+            "payment source": "Treasurer"
+        }
+    ]
+}
