@@ -92,7 +92,7 @@ struct TextBoxWithMenu: View {
                 if let isFocused = isFocused {
                     TextField("Type or choose…", text: $text)
                         .foregroundColor(.black)
-                        .disabled(isDisabled)
+                        .disabled(isDisabled || !allowTyping)
                         .focused(isFocused)
                         .onTapGesture {
                             if allowTyping && !isDisabled {

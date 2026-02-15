@@ -20,6 +20,7 @@ struct PropertyPage: View {
     @State private var number_of_houses: Double = 0
     @State private var propertyDatabase: PropertyDatabase?
     @State private var playerDatabase: PlayerDatabase?
+    @State private var isCreatingNewPlayer = false
     @FocusState private var isPlayerFieldFocused: Bool
     @FocusState private var isLocalityFieldFocused: Bool
     @FocusState private var isPropertyFieldFocused: Bool
@@ -52,7 +53,7 @@ struct PropertyPage: View {
                         isLocalityFieldFocused = false
                         isPropertyFieldFocused = false
                     }
-                SelectionBox(InputPrompt: "Select Player", new_data_input_text: $new_player_text, option_names: player_names, allowTyping: new_player_text == "New player", isFocused: $isPlayerFieldFocused)
+                SelectionBox(InputPrompt: "Select Player", new_data_input_text: $new_player_text, option_names: player_names, allowTyping: isCreatingNewPlayer, isFocused: $isPlayerFieldFocused)
                 Spacer()
                     .onTapGesture {
                         isPlayerFieldFocused = false
@@ -105,9 +106,6 @@ struct PropertyPage: View {
             if let data: PropertyDatabase = readJsonDatabase(filename: "Asset_database.json") {
                 propertyDatabase = data
                 locality_names = Array(data.properties.keys).sorted()
-                print("Asset Database Data: \(String(describing: data))")
-            } else {
-                print("Failed to read Asset_database.json")
             }
 
             if let data: PlayerDatabase = readJsonDatabase(filename: "Player_database.json") {
@@ -128,7 +126,10 @@ struct PropertyPage: View {
         .onChange(of: new_player_text) { newValue in
             if newValue == "New player" {
                 new_player_text = ""
+                isCreatingNewPlayer = true
                 isPlayerFieldFocused = true
+            } else if !newValue.isEmpty && newValue != "Select or create new player" {
+                isCreatingNewPlayer = false
             }
         }
     }
@@ -139,7 +140,7 @@ struct FlatBackgroundView: View {
 
     var body: some View {
         // This replaces the LinearGradient with a solid Color
-        (isNight ? Color.black : Color.blue)
+        (isNight ? Color.black : Color(red: 0.1, green: 0.2, blue: 0.4))
             .ignoresSafeArea() // Ensures the color reaches the very edges of the screen
     }
 }
@@ -236,7 +237,6 @@ func readJsonDatabase<T: Codable>(filename: String) -> T? {
         let decodedData = try JSONDecoder().decode(T.self, from: data)
         return decodedData
     } catch {
-        print("Error reading \(filename): \(error.localizedDescription)")
         return nil
     }
 }
