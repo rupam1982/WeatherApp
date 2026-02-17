@@ -21,6 +21,10 @@ struct PropertyPage: View {
     @State private var propertyDatabase: PropertyDatabase?
     @State private var playerDatabase: PlayerDatabase?
     @State private var isCreatingNewPlayer = false
+    @State private var showingConfirmationAlert = false
+    @State private var showingRentAlert = false
+    @State private var propertyOwner: String = ""
+    @State private var navigateToLanding = false
     @FocusState private var isPlayerFieldFocused: Bool
     @FocusState private var isLocalityFieldFocused: Bool
     @FocusState private var isPropertyFieldFocused: Bool
@@ -42,6 +46,12 @@ struct PropertyPage: View {
     var body: some View {
         
         ZStack {
+            // Hidden NavigationLink for programmatic navigation
+            NavigationLink(destination: LandingPage(), isActive: $navigateToLanding) {
+                EmptyView()
+            }
+            .hidden()
+            
             FlatBackgroundView(isNight: isNight)
                 .onTapGesture {
                     isPlayerFieldFocused = false
@@ -103,6 +113,23 @@ struct PropertyPage: View {
                 .padding(.horizontal, 30)
                 .opacity(isPropertySelected ? 1.0 : 0.5)
                 Spacer()
+                
+                Button(action: {
+                    showingConfirmationAlert = true
+                }) {
+                    Text("Save")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 60)
+                        .background(isPropertySelected ? Color.green : Color.gray)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal, 30)
+                .padding(.bottom, 20)
+                .disabled(!isPropertySelected)
+                
+                Spacer()
             }
             }
         }
@@ -148,6 +175,16 @@ struct PropertyPage: View {
                 property_names = []
             }
         }
+        .onChange(of: new_property_text) { newProperty in
+            // Check property ownership when property is selected
+            if !newProperty.isEmpty && newProperty != "Select property" {
+                if let owner = checkPropertyOwnership(), owner != new_player_text {
+                    // Property owned by another player - show rent alert immediately
+                    propertyOwner = owner
+                    showingRentAlert = true
+                }
+            }
+        }
         .onChange(of: new_player_text) { newValue in
             if newValue == "New player" {
                 new_player_text = ""
@@ -157,6 +194,89 @@ struct PropertyPage: View {
                 isCreatingNewPlayer = false
             }
         }
+        .alert("Confirm Purchase", isPresented: $showingConfirmationAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("OK") {
+                purchaseProperty()
+            }
+        } message: {
+            Text("Pay xxx to yyy for \(Int(number_of_houses)) houses on \(new_locality_text) \(new_property_text).")
+        }
+        .alert("Pay Rent", isPresented: $showingRentAlert) {
+            Button("Cancel", role: .cancel) {
+                // Reset property selection and stay on page
+                new_property_text = "Select property"
+                number_of_houses = 0
+            }
+            Button("OK") {
+                payRent()
+                // Navigate to landing page
+                navigateToLanding = true
+            }
+        } message: {
+            Text("Pay xxx rent to \(propertyOwner) for \(new_locality_text) \(new_property_text).")
+        }
+    }
+    
+    private func checkPropertyOwnership() -> String? {
+        guard let database = playerDatabase else { return nil }
+        
+        // Search through all players to find who owns this property
+        for (playerName, localities) in database.players {
+            if let properties = localities[new_locality_text],
+               properties[new_property_text] != nil {
+                return playerName
+            }
+        }
+        return nil
+    }
+    
+    private func payRent() {
+        // Dummy function - will be implemented later
+        print("Paying rent to \(propertyOwner) for \(new_locality_text) \(new_property_text)")
+    }
+    
+    private func purchaseProperty() {
+        // Validate all required fields are filled
+        guard !new_player_text.isEmpty && new_player_text != "Select or create new player",
+              !new_locality_text.isEmpty && new_locality_text != "Select locality",
+              !new_property_text.isEmpty && new_property_text != "Select property" else {
+            print("All fields must be filled before saving")
+            return
+        }
+        
+        // Load existing player database or create new one
+        var database: PlayerDatabase
+        if let existingData: PlayerDatabase = readJsonDatabase(filename: "Player_database.json") {
+            database = existingData
+        } else {
+            database = PlayerDatabase(players: [:])
+        }
+        
+        // Update or create player entry
+        let housesToAdd = Int(number_of_houses)
+        
+        if database.players[new_player_text] == nil {
+            database.players[new_player_text] = [:]
+        }
+        if database.players[new_player_text]?[new_locality_text] == nil {
+            database.players[new_player_text]?[new_locality_text] = [:]
+        }
+        
+        // Check if property already exists and add to existing houses
+        let existingHouses = database.players[new_player_text]?[new_locality_text]?[new_property_text]?.houses ?? 0
+        let totalHouses = existingHouses + housesToAdd
+        let propertyInfo = PropertyInfo(houses: totalHouses)
+        
+        database.players[new_player_text]?[new_locality_text]?[new_property_text] = propertyInfo
+        
+        // Write back to JSON file
+        writeJsonDatabase(filename: "Player_database.json", data: database)
+        
+        // Update the local state
+        playerDatabase = database
+        
+        print("Property saved: \(new_player_text) - \(new_locality_text) - \(new_property_text) - \(totalHouses) houses (added \(housesToAdd))")
     }
 }
 
@@ -239,7 +359,7 @@ struct PropertyDatabase: Codable {
 }
 
 struct PlayerDatabase: Codable {
-    let players: [String: [String: [String: PropertyInfo]]]
+    var players: [String: [String: [String: PropertyInfo]]]
     
     enum CodingKeys: String, CodingKey {
         case players = ""
@@ -249,20 +369,67 @@ struct PlayerDatabase: Codable {
         let container = try decoder.singleValueContainer()
         players = try container.decode([String: [String: [String: PropertyInfo]]].self)
     }
+    
+    init(players: [String: [String: [String: PropertyInfo]]]) {
+        self.players = players
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(players)
+    }
 }
 
 func readJsonDatabase<T: Codable>(filename: String) -> T? {
     guard let documentsDirectoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
         return nil
     }
+    let documentsFileURL = documentsDirectoryURL.appendingPathComponent(filename)
+    
+    // First try to read from documents directory (writable location)
+    if FileManager.default.fileExists(atPath: documentsFileURL.path) {
+        do {
+            let data = try Data(contentsOf: documentsFileURL)
+            let decodedData = try JSONDecoder().decode(T.self, from: data)
+            return decodedData
+        } catch {
+            print("Error reading from documents directory: \(error)")
+        }
+    }
+    
+    // If not in documents directory, read from app bundle (initial read-only copy)
+    if let bundleURL = Bundle.main.url(forResource: filename.replacingOccurrences(of: ".json", with: ""), withExtension: "json") {
+        do {
+            let data = try Data(contentsOf: bundleURL)
+            let decodedData = try JSONDecoder().decode(T.self, from: data)
+            
+            // Copy to documents directory for future writes
+            try? data.write(to: documentsFileURL)
+            
+            return decodedData
+        } catch {
+            print("Error reading from bundle: \(error)")
+        }
+    }
+    
+    return nil
+}
+
+func writeJsonDatabase<T: Codable>(filename: String, data: T) {
+    guard let documentsDirectoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        print("Error: Could not access documents directory")
+        return
+    }
     let fileURL = documentsDirectoryURL.appendingPathComponent(filename)
 
     do {
-        let data = try Data(contentsOf: fileURL)
-        let decodedData = try JSONDecoder().decode(T.self, from: data)
-        return decodedData
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let jsonData = try encoder.encode(data)
+        try jsonData.write(to: fileURL)
+        print("Successfully wrote to \(filename)")
     } catch {
-        return nil
+        print("Error writing to \(filename): \(error)")
     }
 }
 
