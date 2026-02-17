@@ -32,119 +32,151 @@ struct DatabasePage: View {
                     .foregroundColor(.white)
                     .padding(.top, 20)
                 
-                ScrollView([.horizontal, .vertical]) {
-                    VStack(spacing: 0) {
-                        // Header Row
-                        HStack(spacing: 0) {
-                            Text("Player")
-                                .padding()
-                                .frame(width: 250, alignment: .leading)
-                                .background(Color.blue)
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                            
-                            Rectangle()
-                                .fill(Color.black)
-                                .frame(width: 1)
-                            
-                            Text("Locality")
-                                .padding()
-                                .frame(width: 250, alignment: .leading)
-                                .background(Color.blue)
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                            
-                            Rectangle()
-                                .fill(Color.black)
-                                .frame(width: 1)
-                            
-                            Text("Property")
-                                .padding()
-                                .frame(width: 250, alignment: .leading)
-                                .background(Color.blue)
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                            
-                            Rectangle()
-                                .fill(Color.black)
-                                .frame(width: 1)
-                            
-                            Text("No of Houses")
-                                .padding()
-                                .frame(width: 230, alignment: .leading)
-                                .background(Color.blue)
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                        }
-                        
-                        Rectangle()
-                            .fill(Color.black)
-                            .frame(height: 1)
-                        
-                        // Data Rows
-                        ForEach(tableData) { row in
+                GeometryReader { geometry in
+                    let separatorWidth: CGFloat = 2
+                    let padding: CGFloat = 16
+                    
+                    // Calculate minimum column widths based on content
+                    let minPlayerWidth = max(120, calculateMinWidth(for: "Player", data: tableData.map { $0.player }, fontSize: 18))
+                    let minLocalityWidth = max(120, calculateMinWidth(for: "Locality", data: tableData.map { $0.locality }, fontSize: 18))
+                    let minPropertyWidth = max(120, calculateMinWidth(for: "Property", data: tableData.map { $0.property }, fontSize: 18))
+                    let minHousesWidth = max(120, calculateMinWidth(for: "No of Houses", data: tableData.map { "\($0.houses)" }, fontSize: 18))
+                    
+                    let minTableWidth = minPlayerWidth + minLocalityWidth + minPropertyWidth + minHousesWidth + (separatorWidth * 3)
+                    let availableWidth = geometry.size.width
+                    
+                    // Use the larger of minimum content width or available width
+                    let totalWidth = max(minTableWidth, availableWidth)
+                    let extraSpace = totalWidth - minTableWidth
+                    
+                    // Distribute extra space proportionally
+                    let playerWidth = minPlayerWidth + (extraSpace / 4)
+                    let localityWidth = minLocalityWidth + (extraSpace / 4)
+                    let propertyWidth = minPropertyWidth + (extraSpace / 4)
+                    let housesWidth = minHousesWidth + (extraSpace / 4)
+                    
+                    ScrollView([.horizontal, .vertical]) {
+                        VStack(spacing: 0) {
+                            // Header Row
                             HStack(spacing: 0) {
-                                Text(row.player)
+                                Text("Player")
                                     .padding()
-                                    .frame(width: 250, alignment: .leading)
-                                    .lineLimit(1)
-                                    .background(Color.white.opacity(0.8))
-                                    .font(.system(size: 24))
+                                    .frame(width: playerWidth, alignment: .leading)
+                                    .background(Color.blue)
+                                    .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.black)
                                 
                                 Rectangle()
                                     .fill(Color.black)
-                                    .frame(width: 1)
+                                    .frame(width: separatorWidth)
                                 
-                                Text(row.locality)
+                                Text("Locality")
                                     .padding()
-                                    .frame(width: 250, alignment: .leading)
-                                    .lineLimit(1)
-                                    .background(Color.white.opacity(0.8))
-                                    .font(.system(size: 24))
+                                    .frame(width: localityWidth, alignment: .leading)
+                                    .background(Color.blue)
+                                    .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.black)
                                 
                                 Rectangle()
                                     .fill(Color.black)
-                                    .frame(width: 1)
+                                    .frame(width: separatorWidth)
                                 
-                                Text(row.property)
+                                Text("Property")
                                     .padding()
-                                    .frame(width: 250, alignment: .leading)
-                                    .lineLimit(1)
-                                    .background(Color.white.opacity(0.8))
-                                    .font(.system(size: 24))
+                                    .frame(width: propertyWidth, alignment: .leading)
+                                    .background(Color.blue)
+                                    .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.black)
                                 
                                 Rectangle()
                                     .fill(Color.black)
-                                    .frame(width: 1)
+                                    .frame(width: separatorWidth)
                                 
-                                Text("\(row.houses)")
+                                Text("No of Houses")
                                     .padding()
-                                    .frame(width: 230, alignment: .leading)
-                                    .lineLimit(1)
-                                    .background(Color.white.opacity(0.8))
-                                    .font(.system(size: 24))
+                                    .frame(width: housesWidth, alignment: .leading)
+                                    .background(Color.blue)
+                                    .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.black)
                             }
                             
                             Rectangle()
                                 .fill(Color.black)
                                 .frame(height: 1)
+                            
+                            // Data Rows
+                            ForEach(tableData) { row in
+                                HStack(spacing: 0) {
+                                    Text(row.player)
+                                        .padding()
+                                        .frame(width: playerWidth, alignment: .leading)
+                                        .lineLimit(1)
+                                        .background(Color.white.opacity(0.8))
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.black)
+                                    
+                                    Rectangle()
+                                        .fill(Color.black)
+                                        .frame(width: separatorWidth)
+                                    
+                                    Text(row.locality)
+                                        .padding()
+                                        .frame(width: localityWidth, alignment: .leading)
+                                        .lineLimit(1)
+                                        .background(Color.white.opacity(0.8))
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.black)
+                                    
+                                    Rectangle()
+                                        .fill(Color.black)
+                                        .frame(width: separatorWidth)
+                                    
+                                    Text(row.property)
+                                        .padding()
+                                        .frame(width: propertyWidth, alignment: .leading)
+                                        .lineLimit(1)
+                                        .background(Color.white.opacity(0.8))
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.black)
+                                    
+                                    Rectangle()
+                                        .fill(Color.black)
+                                        .frame(width: separatorWidth)
+                                    
+                                    Text("\(row.houses)")
+                                        .padding()
+                                        .frame(width: housesWidth, alignment: .leading)
+                                        .lineLimit(1)
+                                        .background(Color.white.opacity(0.8))
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.black)
+                                }
+                                
+                                Rectangle()
+                                    .fill(Color.black)
+                                    .frame(height: 1)
+                            }
                         }
                     }
-                    .cornerRadius(8)
+                    .background(Color.white.opacity(0.8))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
-                .padding()
+                .padding(.horizontal)
             }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: LandingPage()) {
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.white)
+                HStack(spacing: 10) {
+                    NavigationLink(destination: TransactionsDatabase()) {
+                        Image(systemName: "dollarsign")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
+                    NavigationLink(destination: LandingPage()) {
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
                 }
             }
         }
@@ -166,6 +198,16 @@ struct DatabasePage: View {
                     }
                 }
             }
+            
+            // Add empty rows to fill the table height
+            let currentRowCount = rows.count
+            let minRows = 20
+            if currentRowCount < minRows {
+                for i in currentRowCount..<minRows {
+                    rows.append(TableRow(player: "", locality: "", property: "", houses: 0))
+                }
+            }
+            
             tableData = rows
         }
     }
