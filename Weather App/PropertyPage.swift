@@ -68,6 +68,11 @@ struct PropertyPage: View {
                         isPropertyFieldFocused = false
                     }
                 SelectionBox(InputPrompt: "Select Player", new_data_input_text: $new_player_text, option_names: player_names, allowTyping: isCreatingNewPlayer, isFocused: $isPlayerFieldFocused)
+                    .id("playerSelectionBox")
+                    .onSubmit {
+                        isCreatingNewPlayer = false
+                        isPlayerFieldFocused = false
+                    }
                 Spacer()
                     .onTapGesture {
                         isPlayerFieldFocused = false
@@ -189,9 +194,12 @@ struct PropertyPage: View {
             if newValue == "New player" {
                 new_player_text = ""
                 isCreatingNewPlayer = true
-                isPlayerFieldFocused = true
-            } else if !newValue.isEmpty && newValue != "Select or create new player" {
-                isCreatingNewPlayer = false
+                DispatchQueue.main.async {
+                    isPlayerFieldFocused = true
+                }
+            } else if !isCreatingNewPlayer && player_names.contains(newValue) && newValue != "New player" {
+                // Only process if not in creating mode and selecting from menu
+                isPlayerFieldFocused = false
             }
         }
         .alert("Confirm Purchase", isPresented: $showingConfirmationAlert) {
@@ -200,7 +208,9 @@ struct PropertyPage: View {
                 purchaseProperty()
             }
         } message: {
-            Text("Pay xxx to yyy for \(Int(number_of_houses)) houses on \(new_locality_text) \(new_property_text).")
+            let existingHouses = playerDatabase?.players[new_player_text]?[new_locality_text]?[new_property_text]?.houses ?? 0
+            let allowedHouses = min(Int(number_of_houses), 4 - existingHouses)
+            return Text("Pay xxx to Treasurer for \(allowedHouses) houses on \(new_locality_text) \(new_property_text).")
         }
         .alert("Pay Rent", isPresented: $showingRentAlert) {
             Button("Cancel", role: .cancel) {
@@ -265,7 +275,8 @@ struct PropertyPage: View {
         
         // Check if property already exists and add to existing houses
         let existingHouses = database.players[new_player_text]?[new_locality_text]?[new_property_text]?.houses ?? 0
-        let totalHouses = existingHouses + housesToAdd
+        let allowedHouses = min(housesToAdd, 4 - existingHouses)
+        let totalHouses = min(existingHouses + allowedHouses, 4)
         let propertyInfo = PropertyInfo(houses: totalHouses)
         
         database.players[new_player_text]?[new_locality_text]?[new_property_text] = propertyInfo
@@ -277,6 +288,9 @@ struct PropertyPage: View {
         playerDatabase = database
         
         print("Property saved: \(new_player_text) - \(new_locality_text) - \(new_property_text) - \(totalHouses) houses (added \(housesToAdd))")
+        
+        // Navigate back to landing page
+        navigateToLanding = true
     }
 }
 

@@ -94,15 +94,15 @@ struct TextBoxWithMenu: View {
                         .foregroundColor(.black)
                         .disabled(isDisabled || !allowTyping)
                         .focused(isFocused)
-                        .onTapGesture {
-                            if allowTyping && !isDisabled {
-                                isFocused.wrappedValue = true
-                            }
+                        .autocorrectionDisabled()
+                        .onSubmit {
+                            isFocused.wrappedValue = false
                         }
                 } else {
                     TextField("Type or choose…", text: $text)
                         .foregroundColor(.black)
                         .disabled(isDisabled || !allowTyping)
+                        .autocorrectionDisabled()
                 }
             }
 
