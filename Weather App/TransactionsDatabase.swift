@@ -18,6 +18,7 @@ struct TransactionsDatabase: View {
         let player: String
         let amount: Double
         let party: String
+        let purpose: String
     }
     
     var body: some View {
@@ -77,7 +78,8 @@ struct TransactionsDatabase: View {
                     rows.append(TableRow(
                         player: player,
                         amount: transaction.paymentAmount,
-                        party: transaction.paymentSource
+                        party: transaction.paymentSource,
+                        purpose: transaction.purpose ?? ""
                     ))
                 }
             }
@@ -89,10 +91,12 @@ struct TransactionsDatabase: View {
 struct TransactionInfo: Codable {
     let paymentAmount: Double
     let paymentSource: String
+    let purpose: String?
     
     enum CodingKeys: String, CodingKey {
         case paymentAmount = "payment amount"
         case paymentSource = "payment source"
+        case purpose = "purpose"
     }
 }
 
@@ -134,8 +138,9 @@ struct TransactionTable: View {
                 let minPlayerWidth = max(120, calculateMinWidth(for: "Player", data: tableData.map { $0.player }, fontSize: 18))
                 let minAmountWidth = max(120, calculateMinWidth(for: "Amount", data: tableData.map { String(format: "%.2f", $0.amount) }, fontSize: 18))
                 let minPartyWidth = max(120, calculateMinWidth(for: "Party", data: tableData.map { $0.party }, fontSize: 18))
+                let minPurposeWidth = max(200, calculateMinWidth(for: "Purpose", data: tableData.map { $0.purpose }, fontSize: 18))
                 
-                let minTableWidth = minPlayerWidth + minAmountWidth + minPartyWidth + (separatorWidth * 2)
+                let minTableWidth = minPlayerWidth + minAmountWidth + minPartyWidth + minPurposeWidth + (separatorWidth * 3)
                 let availableWidth = geometry.size.width
                 
                 // Use the larger of minimum content width or available width
@@ -143,9 +148,10 @@ struct TransactionTable: View {
                 let extraSpace = totalWidth - minTableWidth
                 
                 // Distribute extra space proportionally
-                let playerWidth = minPlayerWidth + (extraSpace / 3)
-                let amountWidth = minAmountWidth + (extraSpace / 3)
-                let partyWidth = minPartyWidth + (extraSpace / 3)
+                let playerWidth = minPlayerWidth + (extraSpace / 4)
+                let amountWidth = minAmountWidth + (extraSpace / 4)
+                let partyWidth = minPartyWidth + (extraSpace / 4)
+                let purposeWidth = minPurposeWidth + (extraSpace / 4)
                 
                 ScrollView([.horizontal, .vertical]) {
                     VStack(spacing: 0) {
@@ -176,6 +182,17 @@ struct TransactionTable: View {
                             Text("Party")
                                 .padding()
                                 .frame(width: partyWidth, alignment: .leading)
+                                .background(Color.blue)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.black)
+                            
+                            Rectangle()
+                                .fill(Color.black)
+                                .frame(width: separatorWidth)
+                            
+                            Text("Purpose")
+                                .padding()
+                                .frame(width: purposeWidth, alignment: .leading)
                                 .background(Color.blue)
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.black)
@@ -215,6 +232,18 @@ struct TransactionTable: View {
                                 Text(row.party)
                                     .padding()
                                     .frame(width: partyWidth, alignment: .leading)
+                                    .lineLimit(1)
+                                    .background(Color.white.opacity(0.8))
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.black)
+                                
+                                Rectangle()
+                                    .fill(Color.black)
+                                    .frame(width: separatorWidth)
+                                
+                                Text(row.purpose)
+                                    .padding()
+                                    .frame(width: purposeWidth, alignment: .leading)
                                     .lineLimit(1)
                                     .background(Color.white.opacity(0.8))
                                     .font(.system(size: 16))

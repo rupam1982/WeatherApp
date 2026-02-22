@@ -210,7 +210,11 @@ struct PropertyPage: View {
         } message: {
             let existingHouses = playerDatabase?.players[new_player_text]?[new_locality_text]?[new_property_text]?.houses ?? 0
             let allowedHouses = min(Int(number_of_houses), 4 - existingHouses)
-            return Text("Pay xxx to Treasurer for \(allowedHouses) houses on \(new_locality_text) \(new_property_text).")
+            let assetInfo = propertyDatabase?.properties[new_locality_text]?[new_property_text]
+            let landCost = (existingHouses == 0) ? (assetInfo?.landPrice ?? 0) : 0
+            let houseCost = allowedHouses * (assetInfo?.housePrice ?? 0)
+            let purchaseCost = landCost + houseCost
+            return Text("Pay \(purchaseCost) to Treasurer for \(allowedHouses) houses on \(new_locality_text) \(new_property_text).")
         }
         .alert("Pay Rent", isPresented: $showingRentAlert) {
             Button("Cancel", role: .cancel) {
@@ -283,6 +287,24 @@ struct PropertyPage: View {
         
         // Write back to JSON file
         writeJsonDatabase(filename: "Player_database.json", data: database)
+        
+        // Calculate purchase cost and record transaction
+        let assetInfo = propertyDatabase?.properties[new_locality_text]?[new_property_text]
+        let landCost = (existingHouses == 0) ? (assetInfo?.landPrice ?? 0) : 0
+        let houseCost = allowedHouses * (assetInfo?.housePrice ?? 0)
+        let purchaseCost = landCost + houseCost
+        
+        var accountsDB: PlayerAccountsDatabase
+        if let existingAccounts: PlayerAccountsDatabase = readJsonDatabase(filename: "Player_accounts.json") {
+            accountsDB = existingAccounts
+        } else {
+            accountsDB = PlayerAccountsDatabase(accounts: [:])
+        }
+        if accountsDB.accounts[new_player_text] == nil {
+            accountsDB.accounts[new_player_text] = []
+        }
+        accountsDB.accounts[new_player_text]?.append(Transaction(paymentAmount: Double(-purchaseCost), paymentSource: "Treasurer", purpose: "Purchase of \(allowedHouses) house(s) in \(new_locality_text) \(new_property_text)"))
+        writeJsonDatabase(filename: "Player_accounts.json", data: accountsDB)
         
         // Update the local state
         playerDatabase = database

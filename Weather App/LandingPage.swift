@@ -184,10 +184,12 @@ struct ActionIcon: View {
 struct Transaction: Codable {
     let paymentAmount: Double
     let paymentSource: String
+    let purpose: String?
     
     enum CodingKeys: String, CodingKey {
         case paymentAmount = "payment amount"
         case paymentSource = "payment source"
+        case purpose = "purpose"
     }
 }
 
