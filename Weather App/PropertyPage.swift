@@ -302,6 +302,7 @@ struct PropertyPage: View {
         }
         if accountsDB.accounts[new_player_text] == nil {
             accountsDB.accounts[new_player_text] = []
+            accountsDB.accounts[new_player_text]?.append(Transaction(paymentAmount: 1500, paymentSource: "Treasurer", purpose: "Initial deposit"))
         }
         accountsDB.accounts[new_player_text]?.append(Transaction(paymentAmount: Double(-purchaseCost), paymentSource: "Treasurer", purpose: "Purchase of \(allowedHouses) house(s) in \(new_locality_text) \(new_property_text)"))
         writeJsonDatabase(filename: "Player_accounts.json", data: accountsDB)
