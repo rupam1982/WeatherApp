@@ -13,6 +13,10 @@ struct LandingPage: View {
     @State private var isNight = false
     @State private var text = ""
     @State private var showingClearConfirmation = false
+    @State private var tooltipText: String = ""
+    @State private var showTooltip: Bool = false
+    @State private var navigateToTransactions = false
+    @State private var navigateToDatabase = false
     let options = ["Apple", "Banana", "Cherry"]
     
     
@@ -53,34 +57,64 @@ struct LandingPage: View {
                 }
                 
                 // Bottom navigation bar with icons
-                HStack {
-                    NavigationLink(destination: TransactionsDatabase()) {
+                ZStack(alignment: .top) {
+                    HStack {
+                        NavigationLink(destination: TransactionsDatabase(), isActive: $navigateToTransactions) { EmptyView() }.hidden()
+                        NavigationLink(destination: DatabasePage(), isActive: $navigateToDatabase) { EmptyView() }.hidden()
+
                         Image(systemName: "dollarsign")
                             .font(.system(size: 30))
                             .foregroundColor(.white)
-                    }
-                    Spacer()
-                    NavigationLink(destination: DatabasePage()) {
+                            .onTapGesture { navigateToTransactions = true }
+                            .onLongPressGesture(minimumDuration: 0.5) {
+                                tooltipText = "Check player account status"
+                                showTooltip = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showTooltip = false }
+                            }
+                        Spacer()
                         Image(systemName: "books.vertical")
                             .font(.system(size: 30))
                             .foregroundColor(.white)
-                    }
-                    Spacer()
-                    Button(action: {
-                        showingClearConfirmation = true
-                    }) {
+                            .onTapGesture { navigateToDatabase = true }
+                            .onLongPressGesture(minimumDuration: 0.5) {
+                                tooltipText = "Check player property records"
+                                showTooltip = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showTooltip = false }
+                            }
+                        Spacer()
                         Image(systemName: "document.on.trash")
                             .renderingMode(.template)
                             .font(.system(size: 30))
                             .foregroundColor(.white)
+                            .onTapGesture { showingClearConfirmation = true }
+                            .onLongPressGesture(minimumDuration: 0.5) {
+                                tooltipText = "Clear all records and restart game"
+                                showTooltip = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { showTooltip = false }
+                            }
+                    }
+                    .padding(16)
+                    .frame(width: 340)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.blue)
+                    )
+
+                    if showTooltip {
+                        Text(tooltipText)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.black.opacity(0.75))
+                            )
+                            .offset(y: -44)
+                            .transition(.opacity)
+                            .animation(.easeInOut(duration: 0.2), value: showTooltip)
                     }
                 }
-                .padding(16)
-                .frame(width: 340)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.blue)
-                )
                     
             }
         }
