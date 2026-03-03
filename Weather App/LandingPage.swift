@@ -44,13 +44,13 @@ struct LandingPage: View {
                     }
                     
                     HStack(spacing: 20) {
+                        NavigationLink(destination: DatabasePage()) {
+                            ActionIcon(actionName: "Database", imageName: "character.book.closed")
+                        }
                         Button(action: {
                             // Treasury action placeholder
                         }) {
                             ActionIcon(actionName: "Treasury", imageName: "dollarsign.bank.building")
-                        }
-                        NavigationLink(destination: DatabasePage()) {
-                            ActionIcon(actionName: "Database", imageName: "character.book.closed")
                         }
                     }
                     
