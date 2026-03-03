@@ -51,7 +51,7 @@ struct UtilitiesPage: View {
     @FocusState private var isPlayerFieldFocused: Bool
     @FocusState private var isUtilityFieldFocused: Bool
 
-    var topRightIconName: String = "airplane.departure"
+    var topRightIconName: String = "house.fill"
 
     // MARK: - Computed state
 

@@ -37,7 +37,7 @@ struct LandingPage: View {
                             ActionIcon(actionName: "Property", imageName: "house.fill")
                         }
                         NavigationLink(destination: UtilitiesPage()) {
-                            ActionIcon(actionName: "Utilities", imageName: "airplane.departure")
+                            ActionIcon(actionName: "Utilities", imageName: "flame.fill", imageSize: 77)
                         }
                     }
                     
@@ -161,6 +161,7 @@ struct ActionIcon: View {
     
     var actionName: String
     var imageName: String
+    var imageSize: CGFloat = 90
     
     var body: some View {
         ZStack{
@@ -171,7 +172,7 @@ struct ActionIcon: View {
                 Image(systemName: imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 90, height: 90)
+                    .frame(width: imageSize, height: imageSize)
                     .foregroundColor(.blue)
                 
                 Text(actionName)
