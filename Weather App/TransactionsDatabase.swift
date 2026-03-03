@@ -223,7 +223,7 @@ struct TransactionTable: View {
                                     .lineLimit(1)
                                     .background(Color.white.opacity(0.8))
                                     .font(.system(size: 16))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(row.amount >= 0 ? .green : .red)
                                 
                                 Rectangle()
                                     .fill(Color.black)

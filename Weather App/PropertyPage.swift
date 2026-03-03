@@ -228,7 +228,10 @@ struct PropertyPage: View {
                 navigateToLanding = true
             }
         } message: {
-            Text("Pay xxx rent to \(propertyOwner) for \(new_locality_text) \(new_property_text).")
+            let ownerHouses = playerDatabase?.players[propertyOwner]?[new_locality_text]?[new_property_text]?.houses ?? 0
+            let assetInfo = propertyDatabase?.properties[new_locality_text]?[new_property_text]
+            let rentAmount = rentForHouses(ownerHouses, assetInfo: assetInfo)
+            return Text("Pay \(rentAmount) rent to \(propertyOwner) for \(new_locality_text) \(new_property_text).")
         }
     }
     
@@ -246,8 +249,45 @@ struct PropertyPage: View {
     }
     
     private func payRent() {
-        // Dummy function - will be implemented later
-        print("Paying rent to \(propertyOwner) for \(new_locality_text) \(new_property_text)")
+        let ownerHouses = playerDatabase?.players[propertyOwner]?[new_locality_text]?[new_property_text]?.houses ?? 0
+        let assetInfo = propertyDatabase?.properties[new_locality_text]?[new_property_text]
+        let rentAmount = rentForHouses(ownerHouses, assetInfo: assetInfo)
+        let purpose = "Rent for \(new_locality_text) \(new_property_text)"
+        
+        var accountsDB: PlayerAccountsDatabase
+        if let existingAccounts: PlayerAccountsDatabase = readJsonDatabase(filename: "Player_accounts.json") {
+            accountsDB = existingAccounts
+        } else {
+            accountsDB = PlayerAccountsDatabase(accounts: [:])
+        }
+        
+        // Deduct rent from the paying player
+        if accountsDB.accounts[new_player_text] == nil {
+            accountsDB.accounts[new_player_text] = []
+            accountsDB.accounts[new_player_text]?.append(Transaction(paymentAmount: 1500, paymentSource: "Treasurer", purpose: "Initial deposit"))
+        }
+        accountsDB.accounts[new_player_text]?.append(Transaction(paymentAmount: Double(-rentAmount), paymentSource: propertyOwner, purpose: purpose))
+        
+        // Credit rent to the property owner
+        if accountsDB.accounts[propertyOwner] == nil {
+            accountsDB.accounts[propertyOwner] = []
+            accountsDB.accounts[propertyOwner]?.append(Transaction(paymentAmount: 1500, paymentSource: "Treasurer", purpose: "Initial deposit"))
+        }
+        accountsDB.accounts[propertyOwner]?.append(Transaction(paymentAmount: Double(rentAmount), paymentSource: new_player_text, purpose: purpose))
+        
+        writeJsonDatabase(filename: "Player_accounts.json", data: accountsDB)
+        print("Rent paid: \(new_player_text) paid \(rentAmount) to \(propertyOwner) for \(new_locality_text) \(new_property_text)")
+    }
+    
+    private func rentForHouses(_ houses: Int, assetInfo: AssetInfo?) -> Int {
+        guard let rent = assetInfo?.rent else { return 0 }
+        switch houses {
+        case 0: return rent.noHouses
+        case 1: return rent.oneHouse
+        case 2: return rent.twoHouses
+        case 3: return rent.threeHouses
+        default: return rent.fourHouses
+        }
     }
     
     private func purchaseProperty() {
