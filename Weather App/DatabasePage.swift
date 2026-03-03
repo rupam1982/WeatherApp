@@ -18,7 +18,7 @@ struct DatabasePage: View {
         let player: String
         let locality: String
         let property: String
-        let houses: Int
+        let houses: Int?
     }
     
     var body: some View {
@@ -40,7 +40,7 @@ struct DatabasePage: View {
                     let minPlayerWidth = max(120, calculateMinWidth(for: "Player", data: tableData.map { $0.player }, fontSize: 18))
                     let minLocalityWidth = max(120, calculateMinWidth(for: "Locality", data: tableData.map { $0.locality }, fontSize: 18))
                     let minPropertyWidth = max(120, calculateMinWidth(for: "Property", data: tableData.map { $0.property }, fontSize: 18))
-                    let minHousesWidth = max(120, calculateMinWidth(for: "No of Houses", data: tableData.map { "\($0.houses)" }, fontSize: 18))
+                    let minHousesWidth = max(120, calculateMinWidth(for: "No of Houses", data: tableData.map { $0.houses.map { "\($0)" } ?? "" }, fontSize: 18))
                     
                     let minTableWidth = minPlayerWidth + minLocalityWidth + minPropertyWidth + minHousesWidth + (separatorWidth * 3)
                     let availableWidth = geometry.size.width
@@ -143,7 +143,7 @@ struct DatabasePage: View {
                                         .fill(Color.black)
                                         .frame(width: separatorWidth)
                                     
-                                    Text("\(row.houses)")
+                                    Text(row.houses.map { "\($0)" } ?? "")
                                         .padding()
                                         .frame(width: housesWidth, alignment: .leading)
                                         .lineLimit(1)
@@ -186,30 +186,46 @@ struct DatabasePage: View {
     }
     
     private func loadPlayerData() {
+        var rows: [TableRow] = []
+
+        // Load residential properties from Player_database.json
         if let data: PlayerDatabase = readJsonDatabase(filename: "Player_database.json") {
             playerDatabase = data
-            
-            var rows: [TableRow] = []
             for (player, localities) in data.players.sorted(by: { $0.key < $1.key }) {
                 for (locality, properties) in localities.sorted(by: { $0.key < $1.key }) {
                     for (property, propertyInfo) in properties.sorted(by: { $0.key < $1.key }) {
-                        let houses = propertyInfo.houses ?? 0
-                        rows.append(TableRow(player: player, locality: locality, property: property, houses: houses))
+                        rows.append(TableRow(player: player, locality: locality, property: property, houses: propertyInfo.houses))
                     }
                 }
             }
-            
-            // Add empty rows to fill the table height
-            let currentRowCount = rows.count
-            let minRows = 20
-            if currentRowCount < minRows {
-                for i in currentRowCount..<minRows {
-                    rows.append(TableRow(player: "", locality: "", property: "", houses: 0))
+        }
+
+        // Merge utilities directly from Utility_database.json so they always appear
+        // even if the Player_database.json write was incomplete
+        if let utilityDB: UtilityDatabase = readJsonDatabase(filename: "Utility_database.json") {
+            let existingKeys = Set(rows.map { "\($0.player)|\($0.locality)|\($0.property)" })
+            for (player, utilities) in utilityDB.owners.sorted(by: { $0.key < $1.key }) {
+                for utility in utilities.sorted() {
+                    let key = "\(player)|Utilities|\(utility)"
+                    if !existingKeys.contains(key) {
+                        rows.append(TableRow(player: player, locality: "Utilities", property: utility, houses: nil))
+                    }
                 }
             }
-            
-            tableData = rows
         }
+
+        // Sort merged list
+        rows.sort { ($0.player, $0.locality, $0.property) < ($1.player, $1.locality, $1.property) }
+
+        // Pad to minimum row count
+        let minRows = 20
+        if rows.count < minRows {
+            for _ in rows.count..<minRows {
+                rows.append(TableRow(player: "", locality: "", property: "", houses: nil))
+            }
+        }
+
+        tableData = rows
     }
 }
 

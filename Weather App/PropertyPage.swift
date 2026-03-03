@@ -167,10 +167,14 @@ struct PropertyPage: View {
 
             if let data: PlayerDatabase = readJsonDatabase(filename: "Player_database.json") {
                 playerDatabase = data
-                player_names = ["New player"] + Array(data.players.keys).sorted()
-            } else {
-                player_names = ["New player"]
             }
+            // Union names from Player_database.json and Player_accounts.json so that
+            // players whose first action was a rent payment (no owned property yet) also appear.
+            var allPlayerNames: Set<String> = Set(playerDatabase.map { Array($0.players.keys) } ?? [])
+            if let accountsData: PlayerAccountsDatabase = readJsonDatabase(filename: "Player_accounts.json") {
+                allPlayerNames.formUnion(accountsData.accounts.keys)
+            }
+            player_names = ["New player"] + allPlayerNames.sorted()
         }
         .onChange(of: new_locality_text) { newLocality in
             new_property_text = ""
@@ -214,7 +218,7 @@ struct PropertyPage: View {
             let landCost = (existingHouses == 0) ? (assetInfo?.landPrice ?? 0) : 0
             let houseCost = allowedHouses * (assetInfo?.housePrice ?? 0)
             let purchaseCost = landCost + houseCost
-            return Text("Pay \(purchaseCost) to Treasurer for \(allowedHouses) houses on \(new_locality_text) \(new_property_text).")
+            return Text("Pay $\(purchaseCost) to Treasurer for \(allowedHouses) houses on \(new_locality_text) \(new_property_text).")
         }
         .alert("Pay Rent", isPresented: $showingRentAlert) {
             Button("Cancel", role: .cancel) {
@@ -231,7 +235,7 @@ struct PropertyPage: View {
             let ownerHouses = playerDatabase?.players[propertyOwner]?[new_locality_text]?[new_property_text]?.houses ?? 0
             let assetInfo = propertyDatabase?.properties[new_locality_text]?[new_property_text]
             let rentAmount = rentForHouses(ownerHouses, assetInfo: assetInfo)
-            return Text("Pay \(rentAmount) rent to \(propertyOwner) for \(new_locality_text) \(new_property_text).")
+            return Text("Pay $\(rentAmount) rent to \(propertyOwner) for \(new_locality_text) \(new_property_text).")
         }
     }
     

@@ -36,9 +36,7 @@ struct LandingPage: View {
                         NavigationLink(destination: PropertyPage()) {
                             ActionIcon(actionName: "Property", imageName: "house.fill")
                         }
-                        Button(action: {
-                            // Utilities action placeholder
-                        }) {
+                        NavigationLink(destination: UtilitiesPage()) {
                             ActionIcon(actionName: "Utilities", imageName: "airplane.departure")
                         }
                     }
@@ -144,6 +142,10 @@ struct LandingPage: View {
         // Clear Player_accounts.json
         let emptyAccountsDatabase = PlayerAccountsDatabase(accounts: [:])
         writeJsonDatabase(filename: "Player_accounts.json", data: emptyAccountsDatabase)
+        
+        // Clear Utility_database.json
+        let emptyUtilityDatabase = UtilityDatabase()
+        writeJsonDatabase(filename: "Utility_database.json", data: emptyUtilityDatabase)
         
         print("Databases cleared successfully")
     }

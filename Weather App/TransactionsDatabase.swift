@@ -136,7 +136,7 @@ struct TransactionTable: View {
                 
                 // Calculate minimum column widths based on content
                 let minPlayerWidth = max(120, calculateMinWidth(for: "Player", data: tableData.map { $0.player }, fontSize: 18))
-                let minAmountWidth = max(120, calculateMinWidth(for: "Amount", data: tableData.map { String(format: "%.2f", $0.amount) }, fontSize: 18))
+                let minAmountWidth = max(120, calculateMinWidth(for: "Amount ($)", data: tableData.map { String(format: "%.2f", $0.amount) }, fontSize: 18))
                 let minPartyWidth = max(120, calculateMinWidth(for: "Party", data: tableData.map { $0.party }, fontSize: 18))
                 let minPurposeWidth = max(200, calculateMinWidth(for: "Purpose", data: tableData.map { $0.purpose }, fontSize: 18))
                 
@@ -168,7 +168,7 @@ struct TransactionTable: View {
                                 .fill(Color.black)
                                 .frame(width: separatorWidth)
                             
-                            Text("Amount")
+                            Text("Amount ($)")
                                 .padding()
                                 .frame(width: amountWidth, alignment: .leading)
                                 .background(Color.blue)
