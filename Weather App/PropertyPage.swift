@@ -42,6 +42,16 @@ struct PropertyPage: View {
     private var isPropertySelected: Bool {
         !new_property_text.isEmpty
     }
+
+    /// Houses the selected player already has on the selected property.
+    private var existingHousesForSelection: Int {
+        playerDatabase?.players[new_player_text]?[new_locality_text]?[new_property_text]?.houses ?? 0
+    }
+
+    /// Maximum additional houses the player can add (capped at 4 total).
+    private var maxAddableHouses: Int {
+        isPropertySelected ? (4 - existingHousesForSelection) : 0
+    }
     
     var body: some View {
         
@@ -100,18 +110,25 @@ struct PropertyPage: View {
 
                     HStack(spacing: 8) {
                         ForEach(0...4, id: \.self) { value in
+                            let isOverLimit = value > maxAddableHouses
                             Button(action: {
                                 number_of_houses = Double(value)
                             }) {
                                 Text("\(value)")
                                     .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(Int(number_of_houses) == value ? .blue : .white)
+                                    .foregroundColor(
+                                        isOverLimit ? Color.white.opacity(0.3) :
+                                        Int(number_of_houses) == value ? .blue : .white
+                                    )
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 50)
-                                    .background(Int(number_of_houses) == value ? Color.white : Color.white.opacity(0.3))
+                                    .background(
+                                        isOverLimit ? Color.white.opacity(0.1) :
+                                        Int(number_of_houses) == value ? Color.white : Color.white.opacity(0.3)
+                                    )
                                     .cornerRadius(8)
                             }
-                            .disabled(!isPropertySelected)
+                            .disabled(!isPropertySelected || isOverLimit)
                         }
                     }
                 }
@@ -178,11 +195,7 @@ struct PropertyPage: View {
         }
         .onChange(of: new_locality_text) { newLocality in
             new_property_text = ""
-            if let propertyDatabase, let properties = propertyDatabase.properties[newLocality] {
-                property_names = Array(properties.keys).sorted()
-            } else {
-                property_names = []
-            }
+            property_names = availableProperties(for: newLocality)
         }
         .onChange(of: new_property_text) { newProperty in
             // Check property ownership when property is selected
@@ -202,7 +215,10 @@ struct PropertyPage: View {
                     isPlayerFieldFocused = true
                 }
             } else if !isCreatingNewPlayer && player_names.contains(newValue) && newValue != "New player" {
-                // Only process if not in creating mode and selecting from menu
+                // Re-filter property list for the newly selected player
+                new_property_text = ""
+                number_of_houses = 0
+                property_names = availableProperties(for: new_locality_text)
                 isPlayerFieldFocused = false
             }
         }
@@ -250,6 +266,31 @@ struct PropertyPage: View {
             }
         }
         return nil
+    }
+
+    /// Returns properties in the given locality that the selected player can interact with:
+    /// - Unowned properties (available to purchase)
+    /// - Properties owned by the selected player with < 4 houses (can add more)
+    /// - Properties owned by OTHER players (to pay rent)
+    /// Excludes properties owned by the selected player that already have 4 houses.
+    private func availableProperties(for locality: String) -> [String] {
+        guard let allProperties = propertyDatabase?.properties[locality] else { return [] }
+        return Array(allProperties.keys).filter { propertyName in
+            // Check who owns this property in playerDatabase
+            guard let ownerEntry = playerDatabase?.players.first(where: {
+                $0.value[locality]?[propertyName] != nil
+            }) else {
+                return true // unowned – available to purchase
+            }
+            let ownerName = ownerEntry.key
+            if ownerName == new_player_text {
+                // Owned by the selected player: only show if they can still add houses
+                let houses = ownerEntry.value[locality]?[propertyName]?.houses ?? 0
+                return houses < 4
+            }
+            // Owned by another player – include so rent can be paid
+            return true
+        }.sorted()
     }
     
     private func payRent() {

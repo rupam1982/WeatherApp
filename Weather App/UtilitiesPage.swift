@@ -39,7 +39,6 @@ struct UtilitiesPage: View {
     @State private var new_player_text = "Select or create new player"
     @State private var player_names: [String] = []
     @State private var new_utility_text = "Select utility"
-    @State private var utility_names: [String] = []
     @State private var commercialDatabase: CommercialPropertiesDatabase?
     @State private var playerDatabase: PlayerDatabase?
     @State private var utilityDatabase: UtilityDatabase?
@@ -68,6 +67,14 @@ struct UtilitiesPage: View {
         guard isUtilitySelected else { return false }
         guard let db = utilityDatabase else { return true }
         return !db.owners.values.contains { $0.contains(new_utility_text) }
+    }
+
+    /// Computed from current player + utilityDatabase so the Menu always reflects
+    /// the latest state without needing manual onChange updates.
+    private var utility_names: [String] {
+        guard let allUtilities = commercialDatabase?.utilities else { return [] }
+        let ownedByPlayer = Set(utilityDatabase?.owners[new_player_text] ?? [])
+        return Array(allUtilities.keys).filter { !ownedByPlayer.contains($0) }.sorted()
     }
 
     private var isSaveEnabled: Bool {
@@ -124,6 +131,7 @@ struct UtilitiesPage: View {
                         isDisabled: !isPlayerSelected,
                         isFocused: $isUtilityFieldFocused
                     )
+                    .id(new_player_text)
 
                     Spacer()
                         .onTapGesture {
@@ -190,7 +198,9 @@ struct UtilitiesPage: View {
                 DispatchQueue.main.async {
                     isPlayerFieldFocused = true
                 }
-            } else if !isCreatingNewPlayer && player_names.contains(newValue) && newValue != "New player" {
+            } else if !newValue.isEmpty && newValue != "Select or create new player" {
+                isCreatingNewPlayer = false
+                new_utility_text = "Select utility"
                 isPlayerFieldFocused = false
             }
         }
@@ -225,7 +235,6 @@ struct UtilitiesPage: View {
     private func loadData() {
         if let data: CommercialPropertiesDatabase = readJsonDatabase(filename: "Commercial_properties.json") {
             commercialDatabase = data
-            utility_names = Array(data.utilities.keys).sorted()
         }
 
         if let data: PlayerDatabase = readJsonDatabase(filename: "Player_database.json") {
