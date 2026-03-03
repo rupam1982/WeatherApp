@@ -116,6 +116,7 @@ struct UtilitiesPage: View {
                     .onSubmit {
                         isCreatingNewPlayer = false
                         isPlayerFieldFocused = false
+                        new_utility_text = "Select utility"
                     }
 
                     Spacer()
@@ -198,8 +199,8 @@ struct UtilitiesPage: View {
                 DispatchQueue.main.async {
                     isPlayerFieldFocused = true
                 }
-            } else if !newValue.isEmpty && newValue != "Select or create new player" {
-                isCreatingNewPlayer = false
+            } else if !isCreatingNewPlayer && !newValue.isEmpty && newValue != "Select or create new player" {
+                // A player was selected from the dropdown — re-filter utilities
                 new_utility_text = "Select utility"
                 isPlayerFieldFocused = false
             }
