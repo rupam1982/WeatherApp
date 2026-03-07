@@ -12,6 +12,13 @@ struct TransactionsDatabase: View {
     
     @State private var accountsDatabase: AccountsDatabase?
     @State private var tableData: [TableRow] = []
+    @State private var playerDatabase: PlayerDatabase?
+    @State private var propertyDatabase: PropertyDatabase?
+    @State private var utilityDatabase: UtilityDatabase?
+    @State private var transportDatabase: TransportDatabase?
+    @State private var commercialDatabase: CommercialPropertiesDatabase?
+    @State private var transportCommercialDatabase: TransportCommercialDatabase?
+    @State private var cardPage = 0
     
     struct TableRow: Identifiable {
         let id = UUID()
@@ -27,21 +34,87 @@ struct TransactionsDatabase: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 20) {
-                VStack(spacing: 20) {
-                    Text("Player Balance")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.top, 20)
-                    
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.2))
-                        .frame(height: 180)
-                        .padding(.horizontal)
-                        .overlay(
-                            PlayerBalanceBarGraph(accountsDatabase: accountsDatabase)
-                                .padding()
-                        )
+            VStack(spacing: 0) {
+                TabView(selection: $cardPage) {
+                    // Page 0 – Net Asset Value
+                    VStack(spacing: 10) {
+                        Text("Net Asset Value")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.2))
+                            .frame(height: 180)
+                            .padding(.horizontal)
+                            .overlay(
+                                PlayerNetAssetBarGraph(
+                                    accountsDatabase: accountsDatabase,
+                                    playerDatabase: playerDatabase,
+                                    propertyDatabase: propertyDatabase,
+                                    utilityDatabase: utilityDatabase,
+                                    transportDatabase: transportDatabase,
+                                    commercialDatabase: commercialDatabase,
+                                    transportCommercialDatabase: transportCommercialDatabase
+                                )
+                                .padding(.horizontal, 12)
+                                .padding(.top, 12)
+                                .padding(.bottom, 36)
+                            )
+                    }
+                    .tag(0)
+
+                    // Page 1 – Cash Balance
+                    VStack(spacing: 10) {
+                        Text("Cash Balance")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.2))
+                            .frame(height: 180)
+                            .padding(.horizontal)
+                            .overlay(
+                                PlayerBalanceBarGraph(accountsDatabase: accountsDatabase)
+                                    .padding(.horizontal, 12)
+                                    .padding(.top, 12)
+                                    .padding(.bottom, 36)
+                            )
+                    }
+                    .tag(1)
+
+                    // Page 2 – Property Value
+                    VStack(spacing: 10) {
+                        Text("Property Value")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.2))
+                            .frame(height: 180)
+                            .padding(.horizontal)
+                            .overlay(
+                                PlayerAssetBarGraph(
+                                    playerDatabase: playerDatabase,
+                                    propertyDatabase: propertyDatabase,
+                                    utilityDatabase: utilityDatabase,
+                                    transportDatabase: transportDatabase,
+                                    commercialDatabase: commercialDatabase,
+                                    transportCommercialDatabase: transportCommercialDatabase
+                                )
+                                .padding(.horizontal, 12)
+                                .padding(.top, 12)
+                                .padding(.bottom, 36)
+                            )
+                    }
+                    .tag(2)
                 }
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .always))
+                .frame(height: 270)
+            }
                 
                 TransactionTable(tableData: tableData)
             }
@@ -71,7 +144,7 @@ struct TransactionsDatabase: View {
     private func loadAccountsData() {
         if let data: AccountsDatabase = readJsonDatabase(filename: "Player_accounts.json") {
             accountsDatabase = data
-            
+
             var rows: [TableRow] = []
             for (player, transactions) in data.accounts.sorted(by: { $0.key < $1.key }) {
                 for transaction in transactions {
@@ -85,6 +158,13 @@ struct TransactionsDatabase: View {
             }
             tableData = rows
         }
+
+        playerDatabase   = readJsonDatabase(filename: "Player_database.json")
+        propertyDatabase = readJsonDatabase(filename: "Asset_database.json")
+        utilityDatabase  = readJsonDatabase(filename: "Utility_database.json") ?? UtilityDatabase()
+        transportDatabase = readJsonDatabase(filename: "Transport_database.json") ?? TransportDatabase()
+        commercialDatabase          = readJsonDatabase(filename: "Commercial_properties.json")
+        transportCommercialDatabase = readJsonDatabase(filename: "Commercial_properties.json")
     }
 }
 
@@ -404,6 +484,290 @@ struct PlayerBalanceBarGraph: View {
                     }
                 }
                 .frame(height: 18)
+                .padding(.bottom, 24)
+            }
+        }
+    }
+}
+
+struct PlayerNetAssetBarGraph: View {
+    let accountsDatabase: AccountsDatabase?
+    let playerDatabase: PlayerDatabase?
+    let propertyDatabase: PropertyDatabase?
+    let utilityDatabase: UtilityDatabase?
+    let transportDatabase: TransportDatabase?
+    let commercialDatabase: CommercialPropertiesDatabase?
+    let transportCommercialDatabase: TransportCommercialDatabase?
+
+    var playerNetValues: [(player: String, value: Double)] {
+        var allPlayers: Set<String> = []
+        if let db = accountsDatabase { allPlayers.formUnion(db.accounts.keys) }
+        if let db = playerDatabase { allPlayers.formUnion(db.players.keys) }
+        if let db = utilityDatabase { allPlayers.formUnion(db.owners.keys) }
+        if let db = transportDatabase { allPlayers.formUnion(db.owners.keys) }
+
+        return allPlayers.sorted().map { player in
+            // Cash balance
+            var cash: Double = 0
+            if let transactions = accountsDatabase?.accounts[player] {
+                cash = transactions.reduce(0.0) { $0 + $1.paymentAmount }
+            }
+
+            // Liquidation value (50% of all assets)
+            var assets: Double = 0
+            if let localities = playerDatabase?.players[player] {
+                for (locality, properties) in localities {
+                    if locality == "Utilities" || locality == "Transport" { continue }
+                    for (property, info) in properties {
+                        if let assetInfo = propertyDatabase?.properties[locality]?[property] {
+                            assets += Double(assetInfo.landPrice) * 0.5
+                            if let houses = info.houses {
+                                assets += Double(houses * assetInfo.housePrice) * 0.5
+                            }
+                        }
+                    }
+                }
+            }
+            if let owned = utilityDatabase?.owners[player] {
+                for utility in owned {
+                    let price = commercialDatabase?.utilities[utility]?.price ?? 150
+                    assets += Double(price) * 0.5
+                }
+            }
+            if let owned = transportDatabase?.owners[player] {
+                for company in owned {
+                    let price = transportCommercialDatabase?.transport[company]?.price ?? 200
+                    assets += Double(price) * 0.5
+                }
+            }
+
+            return (player: player, value: cash + assets)
+        }
+    }
+
+    var maxAbsValue: Double {
+        guard let max = playerNetValues.map({ abs($0.value) }).max(), max > 0 else { return 1 }
+        return max
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let margin: CGFloat = 16
+            let spacing: CGFloat = 16
+            let totalMargins = margin * 2
+            let totalSpacing = CGFloat(max(0, playerNetValues.count - 1)) * spacing
+            let barWidth = (geometry.size.width - totalMargins - totalSpacing) / CGFloat(max(1, playerNetValues.count))
+            let maxBarHeight = (geometry.size.height - 60) / 2
+
+            VStack(spacing: 0) {
+                // Positive bars (top)
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(Array(playerNetValues.enumerated()), id: \.element.player) { index, element in
+                        HStack(spacing: 0) {
+                            if index == 0 { Spacer().frame(width: margin) }
+                            VStack(spacing: 0) {
+                                if element.value >= 0 {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.green.opacity(0.8))
+                                        .frame(width: barWidth, height: max(20, (element.value / maxAbsValue) * maxBarHeight))
+                                        .overlay(
+                                            Text(String(format: "%.0f", element.value))
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(.white)
+                                        )
+                                } else {
+                                    Spacer()
+                                }
+                            }
+                            .frame(width: barWidth)
+                            if index < playerNetValues.count - 1 {
+                                Spacer().frame(width: spacing)
+                            } else {
+                                Spacer().frame(width: margin)
+                            }
+                        }
+                    }
+                }
+                .frame(height: maxBarHeight + 20)
+
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 2)
+
+                // Negative bars (bottom)
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(Array(playerNetValues.enumerated()), id: \.element.player) { index, element in
+                        HStack(spacing: 0) {
+                            if index == 0 { Spacer().frame(width: margin) }
+                            VStack(spacing: 0) {
+                                if element.value < 0 {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.red.opacity(0.8))
+                                        .frame(width: barWidth, height: max(20, (abs(element.value) / maxAbsValue) * maxBarHeight))
+                                        .overlay(
+                                            Text(String(format: "%.0f", element.value))
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(.white)
+                                        )
+                                } else {
+                                    Spacer()
+                                }
+                            }
+                            .frame(width: barWidth)
+                            if index < playerNetValues.count - 1 {
+                                Spacer().frame(width: spacing)
+                            } else {
+                                Spacer().frame(width: margin)
+                            }
+                        }
+                    }
+                }
+                .frame(height: maxBarHeight + 20)
+
+                // Player names
+                HStack(spacing: 0) {
+                    ForEach(Array(playerNetValues.enumerated()), id: \.element.player) { index, element in
+                        HStack(spacing: 0) {
+                            if index == 0 { Spacer().frame(width: margin) }
+                            Text(element.player)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                                .frame(width: barWidth)
+                            if index < playerNetValues.count - 1 {
+                                Spacer().frame(width: spacing)
+                            } else {
+                                Spacer().frame(width: margin)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 18)
+                .padding(.bottom, 24)
+            }
+        }
+    }
+}
+
+struct PlayerAssetBarGraph: View {
+    let playerDatabase: PlayerDatabase?
+    let propertyDatabase: PropertyDatabase?
+    let utilityDatabase: UtilityDatabase?
+    let transportDatabase: TransportDatabase?
+    let commercialDatabase: CommercialPropertiesDatabase?
+    let transportCommercialDatabase: TransportCommercialDatabase?
+
+    var playerAssetValues: [(player: String, value: Double)] {
+        var allPlayers: Set<String> = []
+        if let db = playerDatabase { allPlayers.formUnion(db.players.keys) }
+        if let db = utilityDatabase { allPlayers.formUnion(db.owners.keys) }
+        if let db = transportDatabase { allPlayers.formUnion(db.owners.keys) }
+
+        return allPlayers.sorted().map { player in
+            var total: Double = 0
+
+            // Residential / commercial properties — 50% of land + 50% of house value
+            if let localities = playerDatabase?.players[player] {
+                for (locality, properties) in localities {
+                    if locality == "Utilities" || locality == "Transport" { continue }
+                    for (property, info) in properties {
+                        if let assetInfo = propertyDatabase?.properties[locality]?[property] {
+                            total += Double(assetInfo.landPrice) * 0.5
+                            if let houses = info.houses {
+                                total += Double(houses * assetInfo.housePrice) * 0.5
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Utilities — 50% of purchase price
+            if let owned = utilityDatabase?.owners[player] {
+                for utility in owned {
+                    let price = commercialDatabase?.utilities[utility]?.price ?? 150
+                    total += Double(price) * 0.5
+                }
+            }
+
+            // Transport — 50% of purchase price
+            if let owned = transportDatabase?.owners[player] {
+                for company in owned {
+                    let price = transportCommercialDatabase?.transport[company]?.price ?? 200
+                    total += Double(price) * 0.5
+                }
+            }
+
+            return (player: player, value: total)
+        }
+    }
+
+    var maxValue: Double {
+        guard let max = playerAssetValues.map({ $0.value }).max(), max > 0 else { return 1 }
+        return max
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let margin: CGFloat = 16
+            let spacing: CGFloat = 16
+            let totalMargins = margin * 2
+            let totalSpacing = CGFloat(max(0, playerAssetValues.count - 1)) * spacing
+            let barWidth = (geometry.size.width - totalMargins - totalSpacing) / CGFloat(max(1, playerAssetValues.count))
+            let maxBarHeight = geometry.size.height - 26
+
+            VStack(spacing: 0) {
+                // Bars
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(Array(playerAssetValues.enumerated()), id: \.element.player) { index, element in
+                        HStack(spacing: 0) {
+                            if index == 0 { Spacer().frame(width: margin) }
+                            VStack(spacing: 0) {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.blue.opacity(0.8))
+                                    .frame(width: barWidth, height: max(20, (element.value / maxValue) * maxBarHeight))
+                                    .overlay(
+                                        Text(String(format: "%.0f", element.value))
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
+                                    )
+                            }
+                            .frame(width: barWidth)
+                            if index < playerAssetValues.count - 1 {
+                                Spacer().frame(width: spacing)
+                            } else {
+                                Spacer().frame(width: margin)
+                            }
+                        }
+                    }
+                }
+                .frame(height: maxBarHeight)
+
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 2)
+
+                // Player names
+                HStack(spacing: 0) {
+                    ForEach(Array(playerAssetValues.enumerated()), id: \.element.player) { index, element in
+                        HStack(spacing: 0) {
+                            if index == 0 { Spacer().frame(width: margin) }
+                            Text(element.player)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                                .frame(width: barWidth)
+                            if index < playerAssetValues.count - 1 {
+                                Spacer().frame(width: spacing)
+                            } else {
+                                Spacer().frame(width: margin)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 18)
+                .padding(.bottom, 24)
             }
         }
     }
