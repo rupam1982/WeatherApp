@@ -214,6 +214,19 @@ struct DatabasePage: View {
             }
         }
 
+        // Merge transport companies from Transport_database.json
+        if let transportDB: TransportDatabase = readJsonDatabase(filename: "Transport_database.json") {
+            let existingKeys = Set(rows.map { "\($0.player)|\($0.locality)|\($0.property)" })
+            for (player, companies) in transportDB.owners.sorted(by: { $0.key < $1.key }) {
+                for company in companies.sorted() {
+                    let key = "\(player)|Transport|\(company)"
+                    if !existingKeys.contains(key) {
+                        rows.append(TableRow(player: player, locality: "Transport", property: company, houses: nil))
+                    }
+                }
+            }
+        }
+
         // Sort merged list
         rows.sort { ($0.player, $0.locality, $0.property) < ($1.player, $1.locality, $1.property) }
 

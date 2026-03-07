@@ -42,13 +42,8 @@ struct LandingPage: View {
                     }
                     
                     HStack(spacing: 20) {
-                        NavigationLink(destination: DatabasePage()) {
-                            ActionIcon(actionName: "Database", imageName: "character.book.closed")
-                        }
-                        Button(action: {
-                            // Treasury action placeholder
-                        }) {
-                            ActionIcon(actionName: "Treasury", imageName: "dollarsign.bank.building")
+                        NavigationLink(destination: TransportPage()) {
+                            ActionIcon(actionName: "Transport", imageName: "tram.fill")
                         }
                     }
                     
@@ -146,6 +141,10 @@ struct LandingPage: View {
         // Clear Utility_database.json
         let emptyUtilityDatabase = UtilityDatabase()
         writeJsonDatabase(filename: "Utility_database.json", data: emptyUtilityDatabase)
+
+        // Clear Transport_database.json
+        let emptyTransportDatabase = TransportDatabase()
+        writeJsonDatabase(filename: "Transport_database.json", data: emptyTransportDatabase)
         
         print("Databases cleared successfully")
     }
