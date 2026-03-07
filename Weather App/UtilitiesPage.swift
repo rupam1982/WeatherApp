@@ -45,6 +45,9 @@ struct UtilitiesPage: View {
     @State private var isCreatingNewPlayer = false
     @State private var showingConfirmationAlert = false
     @State private var showingRentAlert = false
+    @State private var showingRentPaidAlert = false
+    @State private var diceThrowText = ""
+    @State private var rentTotalAmount = 0
     @State private var utilityOwner: String = ""
     @State private var navigateToLanding = false
     @FocusState private var isPlayerFieldFocused: Bool
@@ -215,19 +218,33 @@ struct UtilitiesPage: View {
             let price = commercialDatabase?.utilities[new_utility_text]?.price ?? 0
             return Text("Pay $\(price) to Treasurer to purchase \(new_utility_text).")
         }
-        // MARK: - Pay Rent
+        // MARK: - Pay Rent (dice input)
         .alert("Pay Rent", isPresented: $showingRentAlert) {
+            TextField("Dice throw", text: $diceThrowText)
+                .keyboardType(.numberPad)
             Button("Cancel", role: .cancel) {
                 new_utility_text = "Select utility"
+                diceThrowText = ""
             }
             Button("OK") {
-                payUtilityRent()
+                let dice = Int(diceThrowText) ?? 0
+                let multiplier = calculateMultiplierForOwner(utilityOwner)
+                rentTotalAmount = multiplier * dice
+                payUtilityRent(amount: rentTotalAmount)
+                diceThrowText = ""
+                showingRentPaidAlert = true
+            }
+        } message: {
+            let multiplier = calculateMultiplierForOwner(utilityOwner)
+            return Text("Pay \(multiplier)x of dice throw to \(utilityOwner) for \(new_utility_text).")
+        }
+        // MARK: - Rent Paid confirmation
+        .alert("Rent Paid", isPresented: $showingRentPaidAlert) {
+            Button("OK") {
                 navigateToLanding = true
             }
         } message: {
-            let rentAmount = calculateRentForOwner(utilityOwner)
-            let utilitiesOwned = utilityDatabase?.owners[utilityOwner]?.count ?? 0
-            return Text("Pay $\(rentAmount) to \(utilityOwner) for \(new_utility_text) (\(utilitiesOwned) \(utilitiesOwned == 1 ? "utility" : "utilities") owned).")
+            Text("Rent $\(rentTotalAmount) paid to \(utilityOwner) for \(new_utility_text).")
         }
     }
 
@@ -257,9 +274,9 @@ struct UtilitiesPage: View {
         return db.owners.first { $0.value.contains(utilityName) }?.key
     }
 
-    /// Rent = multiplier for however many utilities the owner currently holds.
+    /// Returns the multiplier for however many utilities the owner currently holds.
     /// E.g. owner holds 1 → key "1 owned" → multiplier 4; 2 → "2 owned" → 10
-    private func calculateRentForOwner(_ owner: String) -> Int {
+    private func calculateMultiplierForOwner(_ owner: String) -> Int {
         let owned = utilityDatabase?.owners[owner]?.count ?? 0
         let key = "\(owned) owned"
         return commercialDatabase?.utilities[new_utility_text]?.multiplier[key] ?? 0
@@ -300,8 +317,8 @@ struct UtilitiesPage: View {
         navigateToLanding = true
     }
 
-    private func payUtilityRent() {
-        let rentAmount = calculateRentForOwner(utilityOwner)
+    private func payUtilityRent(amount: Int) {
+        let rentAmount = amount
         let purpose = "Rent for \(new_utility_text)"
 
         var accountsDB: PlayerAccountsDatabase = readJsonDatabase(filename: "Player_accounts.json") ?? PlayerAccountsDatabase(accounts: [:])
