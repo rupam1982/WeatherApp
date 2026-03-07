@@ -114,8 +114,10 @@ struct TextBoxWithMenu: View {
                 }
             } label: {
                 Image(systemName: "chevron.down")
-                    .padding(.horizontal, 6)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
                     .foregroundColor(.black)
+                    .contentShape(Rectangle())
             }
             .disabled(isDisabled)
         }

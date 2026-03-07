@@ -32,15 +32,17 @@ struct PropertyPage: View {
     var topRightIconName: String = "house.fill"
     
     private var isPlayerSelected: Bool {
-        !new_player_text.isEmpty && new_player_text != "New player"
+        !new_player_text.isEmpty
+            && new_player_text != "New player"
+            && new_player_text != "Select or create new player"
     }
 
     private var isLocalitySelected: Bool {
-        !new_locality_text.isEmpty
+        !new_locality_text.isEmpty && new_locality_text != "Select locality"
     }
     
     private var isPropertySelected: Bool {
-        !new_property_text.isEmpty
+        !new_property_text.isEmpty && new_property_text != "Select property"
     }
 
     /// Houses the selected player already has on the selected property.
